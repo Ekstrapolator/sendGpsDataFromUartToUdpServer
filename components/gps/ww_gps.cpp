@@ -1,9 +1,12 @@
 #include "ww_gps.hpp"
 
+//moze dodac namespace gps:: ?
+
 static QueueHandle_t uart1Queue;
 static TaskHandle_t gpsHandle = NULL;
 static constexpr int RxBufSize = 1024;
 static constexpr int MinimumDelay = 1;
+static constexpr const char *TAG = "GPS";
 
 int validateData(uart_event_t event) {
   std::string data(static_cast<unsigned long int>(event.size), '\0');
@@ -40,8 +43,6 @@ int validateData(uart_event_t event) {
 
 static void uartReciveTask(void *arg) {
   uart_event_t event;
-  static constexpr const char *TAG = "UART RX";
-
   while (true) {
 
     if (xQueueReceive(uart1Queue, (void *)&event, portMAX_DELAY)) {
@@ -71,8 +72,6 @@ static void uartReciveTask(void *arg) {
 }
 
 void gps::uartOneinit(void) {
-
-  static constexpr const char *TAG = "UART";
 
   const uart_config_t uart_config = {
       .baud_rate = 9600,
