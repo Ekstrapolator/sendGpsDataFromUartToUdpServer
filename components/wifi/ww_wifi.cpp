@@ -7,8 +7,25 @@
 #include "ww_wifi.hpp"
 
 
-wifi::State state = wifi::nonInitialized;
+wifi::State currentState = wifi::nonInitialized;
 static constexpr const char TAG[] = "WIFI";
+
+static esp_err_t wifiReconnect()
+{
+    static int maximumRetry = 3, retryCount{0};
+    esp_err_t initError;
+    if(retryCount < maximumRetry)
+    {
+        initError = esp_wifi_connect();
+        retryCount++;
+    }
+    else
+    {
+        esp_restart();
+    }
+
+    return initError;
+}
 
 static void wifiEventHandler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
@@ -19,24 +36,40 @@ static void wifiEventHandler(void *event_handler_arg, esp_event_base_t event_bas
         break;
 
     case WIFI_EVENT_STA_CONNECTED:
-        state = wifi::connected;
+        currentState = wifi::connected;
         ESP_LOGI(TAG, "CONNECTED\n");
         break;
 
     case IP_EVENT_STA_GOT_IP:
-        state = wifi::gotIP;
+        currentState = wifi::gotIP;
         ESP_LOGI(TAG, "GOT IP\n");
         break;
 
     case WIFI_EVENT_STA_DISCONNECTED:
-        ESP_LOGI(TAG, "DISCONNECTED EVENT\n");
-        //recconncet state
+        if(currentState == wifi::gotIP)
+        {
+            wifiReconnect();
+        }
+        else if (currentState == wifi::connected)
+        {
+            wifiReconnect();
+        }
+        else if (currentState == wifi::initialized)
+        {
+            wifiReconnect();
+        }
+        else if (currentState == wifi::disconnected)
+        {
+            wifiReconnect();
+        }
+        ESP_LOGI(TAG, "DISCONNECTED EVENT, CURRENT STATE: %d\n", currentState);
+        currentState = wifi::disconnected;
         break;
     case WIFI_EVENT_STA_BEACON_TIMEOUT:
         //plasible dissconect event, recoonect event
-        ESP_LOGI(TAG, "DISCONNECTED EVENT\n");
+        esp_wifi_disconnect();
+        ESP_LOGI(TAG, "TIME OUT EVENT, CURRENT STATE: %d\n", currentState);
         break;
-
 
     default:
         ESP_LOGI("UNSPECYFIED EVENT", "id: %ld base: %s", event_id, event_base);
@@ -90,11 +123,11 @@ void wifi::initSta(wifi_mode_t wifi_mode, const char* ssid, const char* password
     if (initError)
     ESP_LOGW(TAG, "%d", initError);
     else
-    state = wifi::initialized;
+    currentState = wifi::initialized;
 }
 
 
 wifi::State wifi::getState()
 {
-    return state;
+    return currentState;
 }
