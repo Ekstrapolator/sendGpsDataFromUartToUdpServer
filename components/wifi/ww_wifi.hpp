@@ -7,6 +7,8 @@
 
 namespace wifi
 {
-  enum State {noinit, deInit, init, connected, disconnected};
-  void initSta(wifi_mode_t wifi_mode, std::string ssid, std::string password);
+  enum State {nonInitialized, deInitialized, initialized, connected, gotIP, disconnected};
+  void initSta(wifi_mode_t wifi_mode, const char* ssid, const char* password);
+  State getState(void);
+  void recconectSta(void);
 }

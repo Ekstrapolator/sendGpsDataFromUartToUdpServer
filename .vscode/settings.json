@@ -8,5 +8,6 @@
     }
   ],
   "version": 4,
-  "idf.adapterTargetName": "esp32"
+  "idf.adapterTargetName": "esp32",
+  "C_Cpp.errorSquiggles": "disabled"
 }

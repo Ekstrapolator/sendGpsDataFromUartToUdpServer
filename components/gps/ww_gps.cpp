@@ -1,3 +1,12 @@
+#include "driver/gpio.h"
+#include <driver/uart.h>
+#include <esp_err.h>
+#include <esp_log.h>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <freertos/FreeRTOS.h>
+
 #include "ww_gps.hpp"
 
 //moze dodac namespace gps:: ?
@@ -14,7 +23,7 @@ int validateData(uart_event_t event) {
 
   int recivedBytes =
       uart_read_bytes(UART_NUM_1, &data.at(0), RxBufSize, MinimumDelay);
-  if (recivedBytes > 0) {
+  if (recivedBytes > 3) {
     //split to lines
     std::string temp;
     for (auto it = data.begin(); it != data.end(); it++) {
