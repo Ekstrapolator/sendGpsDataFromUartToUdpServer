@@ -1,11 +1,17 @@
-#include <string>
 #include <esp_err.h>
+#include <esp_log.h>
 #include <cstring>
-#include "ww_wifi.hpp"
-#include "ww_wifiCreds.hpp"
 
 static constexpr const char *TAG = "WIFI";
 wifi::State state = wifi::nonInit;
+#include <esp_netif.h>
+#include <esp_event.h>
+
+#include "ww_wifi.hpp"
+
+
+static constexpr const char TAG[] = "WIFI";
+
 static void wifiEventHandler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
     switch (event_id)
@@ -22,6 +28,7 @@ static void wifiEventHandler(void *event_handler_arg, esp_event_base_t event_bas
     case IP_EVENT_STA_GOT_IP:
         //xSemaphoreGive(blockUntilGotIp);
         //task notyfie is better ?
+        ESP_LOGI(TAG, "GOT IP\n");
         break;
 
     case WIFI_EVENT_STA_DISCONNECTED:
@@ -30,7 +37,7 @@ static void wifiEventHandler(void *event_handler_arg, esp_event_base_t event_bas
         break;
 
     default:
-        ESP_LOGI("UNSPECYFIED EVENT", "id: %d base: %s", event_id, event_base);
+        ESP_LOGI("UNSPECYFIED EVENT", "id: %ld base: %s", event_id, event_base);
         break;
     }
 }
@@ -65,6 +72,5 @@ void wifi::initSta(wifi_mode_t wifi_mode, const char* ssid, const char* password
 
     initError = esp_wifi_start();
     ESP_ERROR_CHECK(initError);
-    
-    
 }
+

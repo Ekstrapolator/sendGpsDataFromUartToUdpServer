@@ -6,7 +6,7 @@ static QueueHandle_t uart1Queue;
 static TaskHandle_t gpsHandle = NULL;
 static constexpr int RxBufSize = 1024;
 static constexpr int MinimumDelay = 1;
-static constexpr const char *TAG = "GPS";
+static constexpr const char TAG[] = "GPS";
 
 int validateData(uart_event_t event) {
   std::string data(static_cast<unsigned long int>(event.size), '\0');

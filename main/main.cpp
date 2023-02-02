@@ -7,6 +7,7 @@
 
 #include "ww_gps.hpp"
 #include "ww_utulities.hpp"
+#include "ww_wifi.hpp"
 
 extern "C" {
 void app_main(void);
@@ -25,4 +26,5 @@ void app_main(void) {
     ESP_ERROR_CHECK(ret);
   ut::printChipInfo();
   gps::uartOneinit();
+  wifi::initSta(WIFI_MODE_STA, std::string{SSID}, std::string{PASSWORD});
 }
