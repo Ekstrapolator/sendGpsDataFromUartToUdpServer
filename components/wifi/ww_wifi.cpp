@@ -5,7 +5,7 @@
 #include "ww_wifiCreds.hpp"
 
 static constexpr const char *TAG = "WIFI";
-enum wifiState {init, connected, disconnected};
+wifi::State state = nonInit;
 static void wifiEventHandler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
     switch (event_id)
