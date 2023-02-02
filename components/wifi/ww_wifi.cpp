@@ -35,7 +35,7 @@ static void wifiEventHandler(void *event_handler_arg, esp_event_base_t event_bas
     }
 }
 
-void wifi::initSta(wifi_mode_t wifi_mode, const std::string& ssid, const std::string& password)
+void wifi::initSta(wifi_mode_t wifi_mode, const char* ssid, const char* password)
 {
     esp_err_t initError;
     initError = esp_netif_init();
@@ -58,8 +58,8 @@ void wifi::initSta(wifi_mode_t wifi_mode, const std::string& ssid, const std::st
 
     wifi_config_t sta_config;
     memset(&sta_config, 0, sizeof(sta_config));
-    memcpy(sta_config.sta.ssid, ssid.data(), ssid.size());
-    memcpy(sta_config.sta.password, password.data(), password.size());
+    memcpy(sta_config.sta.ssid, ssid, sizeof(ssid));
+    memcpy(sta_config.sta.password, password, sizeof(password));
 
     initError = esp_wifi_set_config(WIFI_IF_STA, &sta_config);
 
