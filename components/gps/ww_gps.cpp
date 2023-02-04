@@ -6,13 +6,14 @@
 #include <string>
 #include <vector>
 #include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
 #include "ww_gps.hpp"
 
 //moze dodac namespace gps:: ?
 
 static QueueHandle_t uart1Queue;
-static TaskHandle_t gpsHandle = NULL;
+static TaskHandle_t gpsHandle = nullptr;
 static constexpr int RxBufSize = 1024;
 static constexpr int MinimumDelay = 1;
 static constexpr const char TAG[] = "GPS";
