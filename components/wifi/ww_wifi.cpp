@@ -3,12 +3,25 @@
 #include <cstring>
 #include <esp_netif.h>
 #include <esp_event.h>
+#include <vector>
+
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
 #include "ww_wifi.hpp"
 
 
 wifi::State currentState = wifi::nonInitialized;
 static constexpr const char TAG[] = "WIFI";
+std::vector<TaskHandle_t> taskHe;
+
+static void sendNotification(void)
+{
+    for(auto it = taskHe.begin(); it != taskHe.end(); it++)
+    {
+        xTaskNotifyGive(*it);
+    }
+}
 
 static esp_err_t wifiReconnect()
 {
@@ -42,6 +55,7 @@ static void wifiEventHandler(void *event_handler_arg, esp_event_base_t event_bas
 
     case IP_EVENT_STA_GOT_IP:
         currentState = wifi::gotIP;
+        sendNotification();
         ESP_LOGI(TAG, "GOT IP\n");
         break;
 
@@ -66,7 +80,7 @@ static void wifiEventHandler(void *event_handler_arg, esp_event_base_t event_bas
         currentState = wifi::disconnected;
         break;
     case WIFI_EVENT_STA_BEACON_TIMEOUT:
-        //plasible dissconect event, recoonect event
+        
         esp_wifi_disconnect();
         ESP_LOGI(TAG, "TIME OUT EVENT, CURRENT STATE: %d\n", currentState);
         break;
@@ -126,6 +140,10 @@ void wifi::initSta(wifi_mode_t wifi_mode, const char* ssid, const char* password
     currentState = wifi::initialized;
 }
 
+void wifi::registerForNotification(TaskHandle_t taskToNotifie)
+{
+    taskHe.push_back(taskToNotifie);
+}
 
 wifi::State wifi::getState()
 {

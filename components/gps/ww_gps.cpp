@@ -7,24 +7,27 @@
 #include <vector>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <freertos/queue.h>
 
 #include "ww_gps.hpp"
+#include "ww_udpClient.hpp"
 
-//moze dodac namespace gps:: ?
 
-static QueueHandle_t uart1Queue;
+static QueueHandle_t uart1QHe;
 static TaskHandle_t gpsHandle = nullptr;
 static constexpr int RxBufSize = 1024;
 static constexpr int MinimumDelay = 1;
 static constexpr const char TAG[] = "GPS";
+char buff[] = "static buffer !@#$%^&*\n";
 
 int validateData(uart_event_t event) {
   std::string data(static_cast<unsigned long int>(event.size), '\0');
   std::vector<std::string> dataLines;
+  dataLines.reserve(10);
 
   int recivedBytes =
       uart_read_bytes(UART_NUM_1, &data.at(0), RxBufSize, MinimumDelay);
-  if (recivedBytes > 3) {
+  if (recivedBytes > 3) { //whye wne seted to 1 some times failing ????
     //split to lines
     std::string temp;
     for (auto it = data.begin(); it != data.end(); it++) {
@@ -37,15 +40,19 @@ int validateData(uart_event_t event) {
     }
     //end
     //validet lines
+    ESP_LOGI(TAG, "vector size: %d", dataLines.size());
     for(auto it = dataLines.begin(); it != dataLines.end(); it++)
     {
         if ((*it).at(0) != '$'){
-            
             dataLines.erase(it);
         }
     }
     //end
-    
+    //send data to udp queue
+    for(auto it = dataLines.begin(); it != dataLines.end(); it++)
+    {
+      udp::logMessage(buff);
+    }
   }
 
   return 0;
@@ -55,10 +62,9 @@ static void uartReciveTask(void *arg) {
   uart_event_t event;
   while (true) {
 
-    if (xQueueReceive(uart1Queue, (void *)&event, portMAX_DELAY)) {
+    if (xQueueReceive(uart1QHe, (void *)&event, portMAX_DELAY)) {
       switch (event.type) {
       case UART_DATA:
-        ESP_LOGI(TAG, "UART_DATA_SIZE: %d", event.size);
         validateData(event);
         break;
       case UART_FIFO_OVF:
@@ -97,7 +103,7 @@ void gps::uartOneinit(void) {
   esp_err_t initError;
   static constexpr int uart1QueueSize = 20;
   initError = uart_driver_install(UART_NUM_1, RxBufSize * 2, 0, uart1QueueSize,
-                                  &uart1Queue, 0);
+                                  &uart1QHe, 0);
   if (initError)
     ESP_LOGW(TAG, "%d", initError);
   initError = uart_param_config(UART_NUM_1, &uart_config);
@@ -109,6 +115,6 @@ void gps::uartOneinit(void) {
     ESP_LOGW(TAG, "%d", initError);
 
   // run task and start reciving gps data
-  xTaskCreate(uartReciveTask, "uart_recive_task", 1024 * 3, NULL, 2,
+  xTaskCreate(uartReciveTask, "uart_recive_task", 1024 * 10, NULL, 2,
               &gpsHandle);
 }

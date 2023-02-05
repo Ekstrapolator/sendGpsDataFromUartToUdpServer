@@ -30,4 +30,6 @@ void app_main(void) {
   ut::printChipInfo();
   gps::uartOneinit();
   udp::clientStart("192.168.1.7", 2020);
+  while(1)
+  {vTaskDelay(1000);}
 }
