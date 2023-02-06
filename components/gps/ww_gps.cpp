@@ -2,9 +2,7 @@
 #include <driver/uart.h>
 #include <esp_err.h>
 #include <esp_log.h>
-#include <sstream>
-#include <string>
-#include <vector>
+#include <string.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/queue.h>
@@ -15,44 +13,40 @@
 
 static QueueHandle_t uart1QHe;
 static TaskHandle_t gpsHandle = nullptr;
-static constexpr int RxBufSize = 1024;
 static constexpr int MinimumDelay = 1;
 static constexpr const char TAG[] = "GPS";
-char buff[] = "static buffer !@#$%^&*\n";
 
-int validateData(uart_event_t event) {
-  std::string data(static_cast<unsigned long int>(event.size), '\0');
-  std::vector<std::string> dataLines;
-  dataLines.reserve(10);
+static constexpr int rxBufSize = 1024;
+char buff[1024];
+char* newLine[20];
+
+int validateData(uart_event_t* event) {
 
   int recivedBytes =
-      uart_read_bytes(UART_NUM_1, &data.at(0), RxBufSize, MinimumDelay);
-  if (recivedBytes > 3) { //whye wne seted to 1 some times failing ????
-    //split to lines
-    std::string temp;
-    for (auto it = data.begin(); it != data.end(); it++) {
-      if (*it != '\n') {
-        temp += *it;
-      } else {
-        dataLines.push_back(temp);
-        temp.clear();
+      uart_read_bytes(UART_NUM_1, &buff, rxBufSize, MinimumDelay);
+  if (recivedBytes > 0) {
+    int charCount{0};
+    for(int i = 0; i < event->size; i++)
+    {
+      if (buff[i] == '\n')
+      {
+        newLine[charCount] = &buff[i];
+        charCount++;
       }
     }
-    //end
-    //validet lines
-    ESP_LOGI(TAG, "vector size: %d", dataLines.size());
-    for(auto it = dataLines.begin(); it != dataLines.end(); it++)
+    ESP_LOGI(TAG, "New line char count: %d", charCount);
+    for(int i=0; i < charCount - 1; i++ )
     {
-        if ((*it).at(0) != '$'){
-            dataLines.erase(it);
-        }
+      char nmeaSentenceBuff[78];
+      size_t size = newLine[i+1] - newLine[i];
+      ESP_LOGI(TAG, "size to copy: %u", size);
+      memcpy(nmeaSentenceBuff, newLine[i], size);
+      ESP_LOGI(TAG, "%s", nmeaSentenceBuff);
+      memset(nmeaSentenceBuff, 0, sizeof(nmeaSentenceBuff));
     }
-    //end
-    //send data to udp queue
-    for(auto it = dataLines.begin(); it != dataLines.end(); it++)
-    {
-      udp::logMessage(buff);
-    }
+
+    memset(newLine, 0, sizeof(newLine));
+    memset(buff, 0, sizeof(buff));
   }
 
   return 0;
@@ -65,7 +59,7 @@ static void uartReciveTask(void *arg) {
     if (xQueueReceive(uart1QHe, (void *)&event, portMAX_DELAY)) {
       switch (event.type) {
       case UART_DATA:
-        validateData(event);
+        validateData(&event);
         break;
       case UART_FIFO_OVF:
         break;
@@ -102,7 +96,7 @@ void gps::uartOneinit(void) {
 
   esp_err_t initError;
   static constexpr int uart1QueueSize = 20;
-  initError = uart_driver_install(UART_NUM_1, RxBufSize * 2, 0, uart1QueueSize,
+  initError = uart_driver_install(UART_NUM_1, rxBufSize * 2, 0, uart1QueueSize,
                                   &uart1QHe, 0);
   if (initError)
     ESP_LOGW(TAG, "%d", initError);
