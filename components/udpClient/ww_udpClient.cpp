@@ -50,9 +50,10 @@ static void udpClientTask(void *arg) {
         int err = sendto(udpClientSock, dataToSend, strlen(dataToSend), 0,
                          (sockaddr *)&destAddr, sizeof(destAddr));
         
-        ESP_LOGI(TAG, "SENDED DATA: %d", err);
+        //ESP_LOGI(TAG, "SENDED DATA: %d", err);
         if (err < 0) {
           ESP_LOGE(TAG, "Error occured during sending: errno %d", errno);
+
           break;
         }
         }
@@ -89,7 +90,7 @@ void udp::logMessage(const char *log) {
   if (strlen(log) < 512) {
     long qAddEleStat = xQueueSend(udpLogQHe, log, 100);
     if (qAddEleStat == pdTRUE) {
-      ESP_LOGI(TAG, "Data added to queue");
+      //ESP_LOGI(TAG, "Data added to queue");
     }
   }
 }

@@ -18,7 +18,25 @@ static constexpr const char TAG[] = "GPS";
 
 static constexpr int rxBufSize = 1024;
 char buff[1024];
-char* newLine[20];
+char* newLineCharPos[20];
+
+int nmeaCheckSum(char *nmeaSentence, size_t size) {
+  unsigned char calcCheckSum = 0;
+  char checkSum[3];
+  if (*(nmeaSentence + 1) == '$') {
+    for (int i = 2; i < size - 4; i++) {
+
+      calcCheckSum ^= *(nmeaSentence + i);
+    }
+  }
+  memcpy(checkSum, (nmeaSentence + (size - 3)), 2);
+  checkSum[2] = '\0';
+  unsigned char actualCheckSum = strtol(checkSum, NULL, 16);
+  if (actualCheckSum == calcCheckSum) {
+    ESP_LOGI(TAG, "STATMENT IS VALID");
+  }
+  return actualCheckSum == calcCheckSum;
+}
 
 int validateData(uart_event_t* event) {
 
@@ -30,22 +48,23 @@ int validateData(uart_event_t* event) {
     {
       if (buff[i] == '\n')
       {
-        newLine[charCount] = &buff[i];
+        newLineCharPos[charCount] = &buff[i];
         charCount++;
       }
     }
-    ESP_LOGI(TAG, "New line char count: %d", charCount);
+    //ESP_LOGI(TAG, "New line char count: %d", charCount);
     for(int i=0; i < charCount - 1; i++ )
     {
       char nmeaSentenceBuff[78];
-      size_t size = newLine[i+1] - newLine[i];
-      ESP_LOGI(TAG, "size to copy: %u", size);
-      memcpy(nmeaSentenceBuff, newLine[i], size);
-      ESP_LOGI(TAG, "%s", nmeaSentenceBuff);
+      size_t size = newLineCharPos[i+1] - newLineCharPos[i];
+      //ESP_LOGI(TAG, "size to copy: %u", size);
+      memcpy(nmeaSentenceBuff, newLineCharPos[i], size);
+      nmeaCheckSum(nmeaSentenceBuff, size);
+      udp::logMessage(nmeaSentenceBuff);
       memset(nmeaSentenceBuff, 0, sizeof(nmeaSentenceBuff));
     }
 
-    memset(newLine, 0, sizeof(newLine));
+    memset(newLineCharPos, 0, sizeof(newLineCharPos));
     memset(buff, 0, sizeof(buff));
   }
 
