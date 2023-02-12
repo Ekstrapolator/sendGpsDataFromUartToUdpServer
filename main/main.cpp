@@ -1,14 +1,14 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include <sdkconfig.h>
 #include <iostream>
-#include <stdio.h>
 #include <nvs_flash.h>
+#include <sdkconfig.h>
+#include <stdio.h>
 
 #include "ww_gps.hpp"
+#include "ww_udpClient.hpp"
 #include "ww_utulities.hpp"
 #include "ww_wifi.hpp"
-#include "ww_udpClient.hpp"
 
 extern "C" {
 void app_main(void);
@@ -30,6 +30,7 @@ void app_main(void) {
   ut::printChipInfo();
   gps::uartOneinit();
   udp::clientStart("192.168.1.7", 2020);
-  while(1)
-  {vTaskDelay(1000);}
+  while (1) {
+    vTaskDelay(1000);
+  }
 }

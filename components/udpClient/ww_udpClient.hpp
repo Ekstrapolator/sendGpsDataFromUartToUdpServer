@@ -1,8 +1,7 @@
 #pragma once
 
-namespace udp
-{
+namespace udp {
 
-   void clientStart(const char* IPV4address, int port);
-   void logMessage(const char* log);
-}
+void clientStart(const char *IPV4address, int port);
+void logMessage(const char *log);
+} // namespace udp

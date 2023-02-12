@@ -1,7 +1,7 @@
 #include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <freertos/semphr.h>
 #include <freertos/queue.h>
+#include <freertos/semphr.h>
+#include <freertos/task.h>
 
 #include <lwip/err.h>
 #include <lwip/netdb.h>
@@ -10,7 +10,6 @@
 
 #include <esp_err.h>
 #include <esp_log.h>
-
 
 #include "ww_udpClient.hpp"
 #include "ww_wifi.hpp"
@@ -24,11 +23,10 @@ struct ClientData {
   int port;
 };
 
-
 static void udpClientTask(void *arg) {
 
   while (1) {
-    ClientData* host = static_cast<ClientData*>(arg);
+    ClientData *host = static_cast<ClientData *>(arg);
 
     sockaddr_in destAddr;
     destAddr.sin_addr.s_addr = inet_addr(host->adress);
@@ -89,7 +87,7 @@ void udp::logMessage(const char *log) {
   if (strlen(log) > 0 && strlen(log) < 512) {
     long qAddEleStat = xQueueSend(udpLogQHe, log, 100);
     if (qAddEleStat == pdTRUE) {
-      //ESP_LOGI(TAG, "Data added to queue");
+      // ESP_LOGI(TAG, "Data added to queue");
     }
   }
 }
