@@ -17,51 +17,80 @@ static constexpr int MinimumDelay = 1;
 static constexpr const char TAG[] = "GPS";
 
 static constexpr int rxBufSize = 1024;
-char buff[1024];
+char buff[2048];
 char* newLineCharPos[20];
+
+int parse(char* senToParse, size_t size)
+{
+  if (strncmp(senToParse, "$GNRMC", 6) == 0) {
+    ESP_LOGI(TAG, "GNGGA frame");
+    udp::logMessage(senToParse);
+  }
+  return 0;
+}
+
 
 int nmeaCheckSum(char *nmeaSentence, size_t size) {
   unsigned char calcCheckSum = 0;
   char checkSum[3];
-  if (*(nmeaSentence + 1) == '$') {
-    for (int i = 2; i < size - 4; i++) {
+  if (*(nmeaSentence) == '$') {
+    for (int i = 1; i < size - 3; i++) {
 
       calcCheckSum ^= *(nmeaSentence + i);
     }
   }
   memcpy(checkSum, (nmeaSentence + (size - 3)), 2);
-  checkSum[2] = '\0';
+  checkSum[2] = '\n';
   unsigned char actualCheckSum = strtol(checkSum, NULL, 16);
   if (actualCheckSum == calcCheckSum) {
-    ESP_LOGI(TAG, "STATMENT IS VALID");
+  return 0;
   }
-  return actualCheckSum == calcCheckSum;
+  else{
+    return -1;
+  }
 }
 
-int validateData(uart_event_t* event) {
+
+
+int parseGpsData(const uart_event_t* event) {
 
   int recivedBytes =
       uart_read_bytes(UART_NUM_1, &buff, rxBufSize, MinimumDelay);
   if (recivedBytes > 0) {
     int charCount{0};
+    //read buff and save pointers to "\n" characters to newLineCharPos
     for(int i = 0; i < event->size; i++)
     {
-      if (buff[i] == '\n')
+      if (buff[i] == '$')
       {
         newLineCharPos[charCount] = &buff[i];
         charCount++;
       }
+      else if(buff[i] == '\r')
+      {
+        buff[i] = '\n';
+      }
+      else if(buff[i] == '\n')
+      {
+        buff[i] = '\0';
+      }
     }
-    //ESP_LOGI(TAG, "New line char count: %d", charCount);
+    //iterate by all sentances in buff
     for(int i=0; i < charCount - 1; i++ )
     {
-      char nmeaSentenceBuff[78];
       size_t size = newLineCharPos[i+1] - newLineCharPos[i];
-      //ESP_LOGI(TAG, "size to copy: %u", size);
-      memcpy(nmeaSentenceBuff, newLineCharPos[i], size);
-      nmeaCheckSum(nmeaSentenceBuff, size);
-      udp::logMessage(nmeaSentenceBuff);
-      memset(nmeaSentenceBuff, 0, sizeof(nmeaSentenceBuff));
+      if(size < 78 && (size -1) == strlen(newLineCharPos[i])) // check if sentance is less then max allowed nmea size 78 and '\0' is at correct position
+      {
+        //ESP_LOGI(TAG, "size: %d and lenght: %d", size, strlen(newLineCharPos[i]));
+        //ESP_LOGI(TAG, "%s", newLineCharPos[i]);
+        int senValid = nmeaCheckSum(newLineCharPos[i], size);
+        if(senValid)
+        {
+          parse(newLineCharPos[i], size);
+        }
+      }
+
+      //parseGNGGA(nmeaSentenceBuff);
     }
 
     memset(newLineCharPos, 0, sizeof(newLineCharPos));
@@ -78,7 +107,7 @@ static void uartReciveTask(void *arg) {
     if (xQueueReceive(uart1QHe, (void *)&event, portMAX_DELAY)) {
       switch (event.type) {
       case UART_DATA:
-        validateData(&event);
+        parseGpsData(&event);
         break;
       case UART_FIFO_OVF:
         break;

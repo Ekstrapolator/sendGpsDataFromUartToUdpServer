@@ -1,7 +1,12 @@
 #pragma once
 
-
-namespace gps 
+namespace gps {
+struct GNGGA
 {
+    int hour;
+    int minute;
+    int second;
+    int thousand;
+}; 
 void uartOneinit(void);
 }

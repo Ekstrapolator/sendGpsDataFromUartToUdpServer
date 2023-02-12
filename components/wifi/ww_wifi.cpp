@@ -96,34 +96,36 @@ void wifi::initSta(wifi_mode_t wifi_mode, const char* ssid, const char* password
     esp_err_t initError;
     initError = esp_netif_init();
     if (initError)
-    ESP_LOGW(TAG, "%d", initError);
-    initError = esp_wifi_set_storage(WIFI_STORAGE_RAM);
-    if (initError)
-    ESP_LOGW(TAG, "%d", initError);
+    ESP_LOGW(TAG, "netif init: %d", initError);
     //create event loope before registering
     initError = esp_event_loop_create_default();
     esp_netif_create_default_wifi_sta();
     if (initError)
-    ESP_LOGW(TAG, "%d", initError);
+    ESP_LOGW(TAG, "create default: %d", initError);
 
     wifi_init_config_t init_cfg = WIFI_INIT_CONFIG_DEFAULT();
+    
     initError = esp_wifi_init(&init_cfg);
     if (initError)
-    ESP_LOGW(TAG, "%d", initError);
+    ESP_LOGW(TAG, "init: %d", initError);
+    esp_wifi_set_ps(WIFI_PS_NONE);
+    initError = esp_wifi_set_storage(WIFI_STORAGE_RAM);
+    if (initError)
+    ESP_LOGW(TAG, "set storage: %d", initError);
 
     //esp register event handler register wifi related events
     initError = esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, wifiEventHandler, NULL, NULL);
     if (initError)
-    ESP_LOGW(TAG, "%d", initError);
+    ESP_LOGW(TAG, "event handler: %d", initError);
     //register TCP/IP related events
     initError = esp_event_handler_instance_register(IP_EVENT, ESP_EVENT_ANY_ID, wifiEventHandler, NULL, NULL);
     if (initError)
-    ESP_LOGW(TAG, "%d", initError);
+    ESP_LOGW(TAG, "event handler register: %d", initError);
     //IP_EVENT_STA_GOT_IP ESP_EVENT_ANY_ID
 
     initError = esp_wifi_set_mode(wifi_mode);
     if (initError)
-    ESP_LOGW(TAG, "%d", initError);
+    ESP_LOGW(TAG, "set mode: %d", initError);
 
     wifi_config_t sta_config;
     memset(&sta_config, 0, sizeof(sta_config));
@@ -132,10 +134,10 @@ void wifi::initSta(wifi_mode_t wifi_mode, const char* ssid, const char* password
 
     initError = esp_wifi_set_config(WIFI_IF_STA, &sta_config);
     if (initError)
-    ESP_LOGW(TAG, "%d", initError);
+    ESP_LOGW(TAG, "set config: %d", initError);
     initError = esp_wifi_start();
     if (initError)
-    ESP_LOGW(TAG, "%d", initError);
+    ESP_LOGW(TAG, "start: %d", initError);
     else
     currentState = wifi::initialized;
 }

@@ -24,10 +24,11 @@ struct ClientData {
   int port;
 };
 
+
 static void udpClientTask(void *arg) {
 
   while (1) {
-    ClientData *host = static_cast<ClientData *>(arg);
+    ClientData* host = static_cast<ClientData*>(arg);
 
     sockaddr_in destAddr;
     destAddr.sin_addr.s_addr = inet_addr(host->adress);
@@ -45,18 +46,15 @@ static void udpClientTask(void *arg) {
     while (1) {
 
       if (xQueueReceive(udpLogQHe, &dataToSend, portMAX_DELAY)) {
-        if(strlen(dataToSend) > 0)
-        {
         int err = sendto(udpClientSock, dataToSend, strlen(dataToSend), 0,
                          (sockaddr *)&destAddr, sizeof(destAddr));
+        vTaskDelay(5); //to mitgate ENOMEM 12 Not enough space give some time tcp stack to send message and relase buffer
         
-        //ESP_LOGI(TAG, "SENDED DATA: %d", err);
         if (err < 0) {
           ESP_LOGE(TAG, "Error occured during sending: errno %d", errno);
-
-          break;
+          //break;
         }
-        }
+        
       }
     }
     vTaskDelay(100);
@@ -87,7 +85,7 @@ void udp::clientStart(const char *IPV4address, const int port) {
 }
 
 void udp::logMessage(const char *log) {
-  if (strlen(log) < 512) {
+  if (strlen(log) > 0 && strlen(log) < 512) {
     long qAddEleStat = xQueueSend(udpLogQHe, log, 100);
     if (qAddEleStat == pdTRUE) {
       //ESP_LOGI(TAG, "Data added to queue");

@@ -1,2 +1,4 @@
 build
 components/wifi/ww_wifiCreds.hpp
+components/gps/data.gps
+components/udpClient/deauth.event
