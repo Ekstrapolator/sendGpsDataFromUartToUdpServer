@@ -46,15 +46,16 @@ static void udpClientTask(void *arg) {
     while (1) {
 
       if (xQueueReceive(udpLogQHe, &dataToSend, portMAX_DELAY)) {
-        int err = sendto(udpClientSock, dataToSend, strlen(dataToSend), 0,
-                         (sockaddr *)&destAddr, sizeof(destAddr));
-        vTaskDelay(5); //to mitgate ENOMEM 12 Not enough space give some time tcp stack to send message and relase buffer
-        
-        if (err < 0) {
-          ESP_LOGE(TAG, "Error occured during sending: errno %d", errno);
-          //break;
+        if (wifi::getState() == wifi::gotIP) {
+          int err = sendto(udpClientSock, dataToSend, strlen(dataToSend), 0,
+                           (sockaddr *)&destAddr, sizeof(destAddr));
+          vTaskDelay(5); // to mitgate ENOMEM 12 Not enough space give some time
+                         // tcp stack to send message and relase buffer
+
+          if (err < 0) {
+            ESP_LOGE(TAG, "Error occured during sending: errno %d", errno);
+          }
         }
-        
       }
     }
     vTaskDelay(100);
